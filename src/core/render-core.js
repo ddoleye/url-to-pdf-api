@@ -17,7 +17,7 @@ async function createBrowser(opts) {
     browserOpts.executablePath = config.BROWSER_EXECUTABLE_PATH;
   }
   browserOpts.headless = !config.DEBUG_MODE;
-  browserOpts.args = ['--no-sandbox', '--disable-setuid-sandbox'];
+  browserOpts.args = ['--single-process', '--no-zygote', '--no-sandbox', '--disable-setuid-sandbox'];
   if (!opts.enableGPU || navigator.userAgent.indexOf('Win') !== -1) {
     browserOpts.args.push('--disable-gpu');
   }
@@ -198,9 +198,15 @@ async function render(_opts = {}) {
     logger.error(err.stack);
     throw err;
   } finally {
-    logger.info('Closing browser..');
+    
     if (!config.DEBUG_MODE) {
-      await browser.close();
+      if (config.BROWSER_WS_ENDPOINT) {
+        logger.info('Disconnecting browser..');
+        await browser.disconnect();
+      } else {
+        logger.info('Closing browser..');
+        await browser.close();
+      }
     }
   }
 
